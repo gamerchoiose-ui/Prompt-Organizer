@@ -28,9 +28,12 @@ To prevent accidental force-pushes, direct commits, or breaking code on the `mai
 
 ---
 
-## Automated Enforcement in CI
+## Automated Enforcement in CI & Local Hooks
 
-In addition to GitHub UI branch protection rules, this repository includes automated CI workflows (`.github/workflows/ci.yml` and `codeql.yml`) that run on every pull request and push to verify:
-- TypeScript type safety and linting (`npm run lint`)
-- Vitest unit tests (`npm test`)
-- Security vulnerability analysis (CodeQL & Dependabot)
+In addition to GitHub UI branch protection rules, this repository includes:
+1. **Automated CI Workflows** (`.github/workflows/ci.yml` and `codeql.yml`): Runs on every pull request and push to verify:
+   - TypeScript type safety and linting (`npm run lint`)
+   - Vitest unit tests (`npm test`)
+   - Security vulnerability analysis (CodeQL & Dependabot)
+2. **Local Pre-Push Hook** (`.git/hooks/pre-push`): Automatically runs tests and lint checks and **blocks force-pushes (`git push --force`)** before code is pushed to remote repositories.
+
