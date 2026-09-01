@@ -1,0 +1,7 @@
+{
+  "name": "Prompt Organizer",
+  "description": "A structured and intuitive system for users to store, categorize, and retrieve their prompts efficiently with Gemini AI assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
