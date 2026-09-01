@@ -3,9 +3,9 @@
 <div align="center">
 
 [![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38Bdf8?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38Bdf8?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 [![Vitest](https://img.shields.io/badge/Vitest-Unit_Tests-729B1B?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
@@ -15,11 +15,11 @@
 
 ---
 
-## 📸 Screenshot Preview
+## 📸 Visual Preview & Workflow
 
 <div align="center">
-  <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80" alt="Prompt Organizer Dashboard Preview" width="100%" style="border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);" />
-  <p><em>Centralized Prompt Management Dashboard with Tag Filtering, Search, and One-Click Copy.</em></p>
+  <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80" alt="Prompt Organizer Dashboard & Workflow Preview" width="100%" style="border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);" />
+  <p><em>Demonstrating Prompt Creation, Subfolder Categorization, and One-Click Copy-to-Clipboard Workflow.</em></p>
 </div>
 
 ---
@@ -36,45 +36,19 @@
 
 ---
 
-## 🚀 Local Setup & Running (`npm run dev`)
+## 🚀 Local Setup & Running
 
-Follow these steps to set up and run the project locally on your machine:
-
-### Prerequisites
-
-- **Node.js** (v18 or higher recommended)
-- **npm** package manager
-
-### 1. Clone the Repository
+Follow these three basic commands to clone and run the project locally on your machine:
 
 ```bash
-git clone https://github.com/your-username/prompt-organizer.git
-cd prompt-organizer
-```
-
-### 2. Install Dependencies
-
-```bash
+git clone https://github.com/gamerchoiose-ui/Prompt-Organizer.git
 npm install
-```
-
-### 3. Configure Environment Variables
-
-Create a `.env` file in the root directory based on `.env.example`:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-### 4. Run Development Server
-
-```bash
 npm run dev
 ```
 
 The application will be accessible at `http://localhost:3000`.
 
-### 5. Run Tests & Linting
+### Additional Commands
 
 ```bash
 # Run unit tests with Vitest
