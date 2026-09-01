@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PromptItem } from '../types';
 import { FolderKanban, Trash2, Star } from 'lucide-react';
-import { List } from 'react-window';
+import * as ReactWindow from 'react-window';
+const List = (ReactWindow as any).List || (ReactWindow as any).default;
 
 interface PromptSidebarListProps {
   filteredPrompts: PromptItem[];
@@ -11,6 +12,7 @@ interface PromptSidebarListProps {
   onToggleSelectAll: () => void;
   onCheckboxChange: (promptId: string, e: React.MouseEvent) => void;
   onToggleFavorite: (promptId: string, e?: React.MouseEvent) => void;
+  onDuplicate: (promptId: string) => void;
   selectedTask: string;
   getTaskColorClass: (task: string) => string;
   handleBulkDelete: () => void;
@@ -20,6 +22,9 @@ interface PromptSidebarListProps {
   subFolders: Record<string, string[]>;
   onDeselectAll: () => void;
   onReorderPrompts: (draggedId: string, targetId: string) => void;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  onResetFilters?: () => void;
 }
 
 interface RowProps {
@@ -29,9 +34,29 @@ interface RowProps {
   onSelectPrompt: (promptId: string) => void;
   onCheckboxChange: (promptId: string, e: React.MouseEvent) => void;
   onToggleFavorite: (promptId: string, e?: React.MouseEvent) => void;
+  onDuplicate: (promptId: string) => void;
   getTaskColorClass: (task: string) => string;
   onReorderPrompts: (draggedId: string, targetId: string) => void;
+  searchQuery?: string;
 }
+
+const highlightText = (text: string, query?: string) => {
+  if (!query || !query.trim()) return text;
+  try {
+    const parts = text.split(new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+    return parts.map((part, i) => 
+      part.toLowerCase() === (query || '').toLowerCase() ? (
+        <mark key={i} className="bg-amber-200 text-stone-900 rounded px-0.5 font-semibold not-italic">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  } catch (e) {
+    return text;
+  }
+};
 
 const RowComponent = ({
   index,
@@ -42,8 +67,10 @@ const RowComponent = ({
   onSelectPrompt,
   onCheckboxChange,
   onToggleFavorite,
+  onDuplicate,
   getTaskColorClass,
   onReorderPrompts,
+  searchQuery,
 }: {
   index: number;
   style: React.CSSProperties;
@@ -52,9 +79,17 @@ const RowComponent = ({
   if (!p) return null;
   const isSelected = selectedPromptId === p.prompt_id;
   const isChecked = selectedPromptIds.includes(p.prompt_id);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+
+  useEffect(() => {
+    if (!showContextMenu) return;
+    const handleClickOutside = () => setShowContextMenu(false);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [showContextMenu]);
 
   return (
-    <div style={style} className="px-3 py-1.5">
+    <div style={style} className="px-3 py-1.5 relative">
       <div
         draggable
         onDragStart={(e) => e.dataTransfer.setData('text/plain', p.prompt_id)}
@@ -67,6 +102,10 @@ const RowComponent = ({
           }
         }}
         onClick={() => onSelectPrompt(p.prompt_id)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setShowContextMenu(true);
+        }}
         className={`p-3.5 rounded-xl cursor-grab active:cursor-grabbing transition-all border relative group h-full flex flex-col justify-between ${
           isSelected
             ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs'
@@ -89,22 +128,29 @@ const RowComponent = ({
             </div>
             <div className="flex items-center gap-1">
               <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowContextMenu(!showContextMenu);
+                }}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-200/60 transition-colors"
+                title="Sidebar context options"
+              >
+                ⋮
+              </button>
+              <button
                 onClick={(e) => onToggleFavorite(p.prompt_id, e)}
                 className="text-slate-300 hover:text-amber-500 p-0.5"
               >
                 <Star className={`w-3.5 h-3.5 ${p.is_favorite ? 'text-amber-500 fill-amber-500' : ''}`} />
               </button>
-              <span className="text-[10px] text-slate-400">
-                {p.date_created ? new Date(p.date_created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
-              </span>
             </div>
           </div>
 
           <h3 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">
-            {p.name}
+            {highlightText(p.name, searchQuery)}
           </h3>
           <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
-            {p.description}
+            {highlightText(p.description, searchQuery)}
           </p>
         </div>
 
@@ -112,9 +158,45 @@ const RowComponent = ({
           <div className="mt-2 flex items-center gap-1 flex-wrap">
             {p.tags.slice(0, 2).map((tag, idx) => (
               <span key={idx} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
-                #{tag}
+                #{highlightText(tag, searchQuery)}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Context Menu Dropdown */}
+        {showContextMenu && (
+          <div className="absolute right-3 top-10 w-44 bg-white rounded-xl shadow-xl border border-stone-200 z-30 py-1.5 text-xs animate-in fade-in duration-150">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowContextMenu(false);
+                onDuplicate(p.prompt_id);
+              }}
+              className="w-full text-left px-3.5 py-2 hover:bg-stone-50 text-stone-700 font-medium flex items-center gap-2"
+            >
+              <span>📋</span> Duplicate Prompt
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowContextMenu(false);
+                navigator.clipboard.writeText(p.prompt_text);
+              }}
+              className="w-full text-left px-3.5 py-2 hover:bg-stone-50 text-stone-700 font-medium flex items-center gap-2"
+            >
+              <span>✂️</span> Copy Prompt Text
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowContextMenu(false);
+                onToggleFavorite(p.prompt_id, e);
+              }}
+              className="w-full text-left px-3.5 py-2 hover:bg-stone-50 text-stone-700 font-medium flex items-center gap-2"
+            >
+              <span>⭐</span> {p.is_favorite ? 'Remove Favorite' : 'Mark Favorite'}
+            </button>
           </div>
         )}
       </div>
@@ -130,6 +212,7 @@ export const PromptSidebarList: React.FC<PromptSidebarListProps> = React.memo(({
   onToggleSelectAll,
   onCheckboxChange,
   onToggleFavorite,
+  onDuplicate,
   selectedTask,
   getTaskColorClass,
   handleBulkDelete,
@@ -139,6 +222,9 @@ export const PromptSidebarList: React.FC<PromptSidebarListProps> = React.memo(({
   subFolders,
   onDeselectAll,
   onReorderPrompts,
+  searchQuery,
+  setSearchQuery,
+  onResetFilters,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(400);
@@ -167,8 +253,10 @@ export const PromptSidebarList: React.FC<PromptSidebarListProps> = React.memo(({
     onSelectPrompt,
     onCheckboxChange,
     onToggleFavorite,
+    onDuplicate,
     getTaskColorClass,
     onReorderPrompts,
+    searchQuery,
   }), [
     filteredPrompts,
     selectedPromptId,
@@ -176,8 +264,10 @@ export const PromptSidebarList: React.FC<PromptSidebarListProps> = React.memo(({
     onSelectPrompt,
     onCheckboxChange,
     onToggleFavorite,
+    onDuplicate,
     getTaskColorClass,
     onReorderPrompts,
+    searchQuery,
   ]);
 
   return (
@@ -266,20 +356,31 @@ export const PromptSidebarList: React.FC<PromptSidebarListProps> = React.memo(({
 
       <div ref={containerRef} className="flex-1 overflow-hidden w-full">
         {filteredPrompts.length > 0 ? (
-          <List
-            height={listHeight || 400}
-            rowCount={filteredPrompts.length}
-            rowHeight={136}
-            width="100%"
-            rowComponent={RowComponent}
-            rowProps={rowProps}
-            className="focus:outline-hidden"
-          />
+          React.createElement(List as any, {
+            height: listHeight || 400,
+            rowCount: filteredPrompts.length,
+            rowHeight: 136,
+            width: "100%",
+            rowComponent: RowComponent,
+            rowProps: rowProps,
+            className: "focus:outline-hidden"
+          })
         ) : (
           <div className="text-center py-12 px-4 space-y-3">
             <FolderKanban className="w-10 h-10 text-slate-300 mx-auto" />
             <p className="text-sm font-medium text-slate-700">No prompts found</p>
             <p className="text-xs text-slate-400">Try adjusting your filters or search query.</p>
+            {(searchQuery || onResetFilters) && (
+              <button
+                onClick={() => {
+                  if (setSearchQuery) setSearchQuery('');
+                  if (onResetFilters) onResetFilters();
+                }}
+                className="mt-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-colors border border-indigo-200 inline-block"
+              >
+                Clear Search & Reset Filters
+              </button>
+            )}
           </div>
         )}
       </div>

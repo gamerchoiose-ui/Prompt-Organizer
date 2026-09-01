@@ -387,6 +387,30 @@ export default function App() {
     setSelectedPromptIds([]);
   };
 
+  const handleDuplicatePrompt = (promptId: string) => {
+    const target = prompts.find(p => p.prompt_id === promptId);
+    if (!target) return;
+    const now = new Date().toISOString();
+    const duplicated: PromptItem = {
+      ...target,
+      prompt_id: `prompt-${Date.now()}`,
+      name: `${target.name} - Copy`,
+      date_created: now,
+      last_used: now,
+      versions: [
+        {
+          version_id: `v-${Date.now()}`,
+          version_number: 1,
+          prompt_text: target.prompt_text,
+          timestamp: now,
+          change_summary: 'Initial duplicate copy',
+        }
+      ]
+    };
+    setPrompts(prev => [duplicated, ...prev]);
+    setSelectedPromptId(duplicated.prompt_id);
+  };
+
   const handleSavePrompt = (promptData: Omit<PromptItem, 'prompt_id' | 'date_created' | 'last_used'> & { prompt_id?: string }) => {
     const now = new Date().toISOString();
     if (promptData.prompt_id) {
@@ -848,6 +872,7 @@ export default function App() {
             onToggleSelectAll={handleToggleSelectAll}
             onCheckboxChange={handleCheckboxChange}
             onToggleFavorite={handleToggleFavorite}
+            onDuplicate={handleDuplicatePrompt}
             selectedTask={selectedTask}
             getTaskColorClass={getTaskColorClass}
             handleBulkDelete={handleBulkDelete}
@@ -857,6 +882,14 @@ export default function App() {
             subFolders={subFolders}
             onDeselectAll={() => setSelectedPromptIds([])}
             onReorderPrompts={handleReorderPrompts}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onResetFilters={() => {
+              setSelectedTask('All Tasks');
+              setSelectedSubFolder(null);
+              setSelectedTag(null);
+              setShowFavoritesOnly(false);
+            }}
           />
 
           <PromptDetailView
@@ -876,6 +909,7 @@ export default function App() {
               setIsCreateOpen(true);
             }}
             onDelete={handleDeletePrompt}
+            onDuplicate={handleDuplicatePrompt}
             getTaskColorClass={getTaskColorClass}
             copied={copied}
             onCopy={handleCopyPromptText}

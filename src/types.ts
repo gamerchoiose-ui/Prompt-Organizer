@@ -19,6 +19,7 @@ export interface PromptItem {
   example_input?: string;
   example_output?: string;
   is_favorite?: boolean;
+  use_count?: number;
   versions?: PromptVersion[];
 }
 

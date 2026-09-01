@@ -32,11 +32,18 @@ app.post("/api/generate-prompt", async (req, res) => {
   try {
     const { action, currentPrompt, instructions, taskType } = req.body;
     
-    let systemInstruction = "You are an expert prompt engineer. Help users create, refine, and optimize structured AI prompts.";
+    let systemInstruction = "You are an expert prompt engineer and system integration assistant. Your core task is to create and structure a new prompt entry while guaranteeing that all associated metadata—specifically its assigned category and tags—are fully indexed, linked, and searchable.";
     let contents = "";
 
     if (action === "generate") {
-      contents = `Create a professional, highly effective AI prompt for the following goal/task type ("${taskType || 'general'}"): ${instructions}. 
+      contents = `Create a professional, highly effective AI prompt for the following goal/task type ("${taskType || 'Writing'}"): ${instructions}. 
+
+      Requirements:
+      1. Core Task: Create a new prompt based on the provided text/goal.
+      2. Categorization: Assign the prompt to the specified category ("${taskType || 'Writing'}").
+      3. Tagging: Associate the prompt with relevant tags as an array of strings.
+      4. Crucial Linking & Discoverability Instruction: Ensure that the assignment of the category and tags to the prompt is correctly registered and linked within the system's data structure, so that the prompt is immediately discoverable when users filter or search by this category or any of these tags.
+      
       Provide a descriptive name, description, prompt text (with placeholders like {{variable}} if appropriate), tags (array), associated task, example input, and example output.`;
     } else if (action === "optimize") {
       contents = `Optimize and improve the following prompt based on these instructions ("${instructions}"):
@@ -44,8 +51,9 @@ app.post("/api/generate-prompt", async (req, res) => {
       Description: ${currentPrompt.description}
       Prompt Text: ${currentPrompt.prompt_text}
       Associated Task: ${currentPrompt.associated_task}
+      Tags: ${(currentPrompt.tags || []).join(', ')}
       
-      Make it clearer, more structured, and robust for Gemini or LLMs.`;
+      Make it clearer, more structured, and robust for Gemini or LLMs, while ensuring that the category ("${currentPrompt.associated_task}") and tags remain correctly linked and discoverable.`;
     } else {
       contents = instructions;
     }
@@ -104,6 +112,71 @@ app.post("/api/test-prompt", async (req, res) => {
   } catch (error: any) {
     console.error("Gemini Test Prompt Error:", error);
     res.status(500).json({ success: false, error: error.message || "Failed to test prompt" });
+  }
+});
+
+// Endpoint for advanced search & scoring (Elasticsearch architecture simulation)
+app.post("/api/search", (req, res) => {
+  try {
+    const { query, prompts, filters } = req.body;
+    if (!prompts || !Array.isArray(prompts)) {
+      return res.status(400).json({ success: false, error: "Prompts array required" });
+    }
+
+    const searchQuery = (query || "").trim().toLowerCase();
+    
+    // Score and filter prompts with boosted field relevance
+    const results = prompts.map((prompt: any) => {
+      let score = 0;
+      const name = (prompt.name || "").toLowerCase();
+      const desc = (prompt.description || "").toLowerCase();
+      const text = (prompt.prompt_text || "").toLowerCase();
+      const tags = (prompt.tags || []).map((t: string) => t.toLowerCase());
+      const task = (prompt.associated_task || "").toLowerCase();
+
+      if (!searchQuery) {
+        score = 1.0;
+      } else {
+        if (name.includes(searchQuery)) score += 10.0;
+        if (desc.includes(searchQuery)) score += 5.0;
+        if (text.includes(searchQuery)) score += 2.0;
+        if (tags.some(t => t.includes(searchQuery))) score += 4.0;
+        if (task.includes(searchQuery)) score += 3.0;
+
+        // Fuzzy / prefix matching fallback
+        if (score === 0 && searchQuery.length > 2) {
+          if (name.startsWith(searchQuery.slice(0, 2)) || desc.startsWith(searchQuery.slice(0, 2))) {
+            score += 0.5;
+          }
+        }
+      }
+
+      let matchesFilters = true;
+      if (filters) {
+        if (filters.associated_task && filters.associated_task !== 'All Tasks' && prompt.associated_task !== filters.associated_task) {
+          matchesFilters = false;
+        }
+        if (filters.is_favorite && !prompt.is_favorite) {
+          matchesFilters = false;
+        }
+        if (filters.tag && (!prompt.tags || !prompt.tags.includes(filters.tag))) {
+          matchesFilters = false;
+        }
+      }
+
+      return {
+        ...prompt,
+        _score: score,
+        _matches: score > 0 && matchesFilters
+      };
+    })
+    .filter(item => item._matches)
+    .sort((a, b) => b._score - a._score);
+
+    res.json({ success: true, results, total: results.length });
+  } catch (error: any) {
+    console.error("Search API Error:", error);
+    res.status(500).json({ success: false, error: error.message || "Search failed" });
   }
 });
 

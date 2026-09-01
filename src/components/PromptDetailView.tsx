@@ -12,6 +12,7 @@ interface PromptDetailViewProps {
   onOpenHistory: () => void;
   onEdit: (prompt: PromptItem) => void;
   onDelete: (promptId: string, e?: React.MouseEvent) => void;
+  onDuplicate: (promptId: string) => void;
   getTaskColorClass: (task: string) => string;
   copied: boolean;
   onCopy: (text: string) => void;
@@ -25,6 +26,7 @@ export const PromptDetailView: React.FC<PromptDetailViewProps> = React.memo(({
   onOpenHistory,
   onEdit,
   onDelete,
+  onDuplicate,
   getTaskColorClass,
   copied,
   onCopy,
@@ -91,6 +93,14 @@ export const PromptDetailView: React.FC<PromptDetailViewProps> = React.memo(({
                     {currentSelectedPrompt.versions.length}
                   </span>
                 )}
+              </button>
+
+              <button
+                onClick={() => onDuplicate(currentSelectedPrompt.prompt_id)}
+                className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 border border-slate-200 transition-colors"
+                title="Duplicate prompt"
+              >
+                <Copy className="w-4 h-4" />
               </button>
 
               <button
