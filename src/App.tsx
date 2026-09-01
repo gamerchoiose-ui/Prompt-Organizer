@@ -44,7 +44,15 @@ export default function App() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,7 +88,11 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('promptcraft_subfolders_v1', JSON.stringify(subFolders));
+    try {
+      localStorage.setItem('promptcraft_subfolders_v1', JSON.stringify(subFolders));
+    } catch (e) {
+      console.error('Failed to save subfolders to localStorage (quota exceeded or restricted):', e);
+    }
   }, [subFolders]);
 
   const [templates, setTemplates] = useState<PromptTemplateItem[]>(() => {
@@ -121,7 +133,11 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('promptcraft_templates_v1', JSON.stringify(templates));
+    try {
+      localStorage.setItem('promptcraft_templates_v1', JSON.stringify(templates));
+    } catch (e) {
+      console.error('Failed to save templates to localStorage:', e);
+    }
   }, [templates]);
 
   const handleSaveTemplate = (newTpl: Omit<PromptTemplateItem, 'id'>) => {
@@ -201,10 +217,14 @@ export default function App() {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('promptcraft_auth_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('promptcraft_auth_user');
+    try {
+      if (currentUser) {
+        localStorage.setItem('promptcraft_auth_user', JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem('promptcraft_auth_user');
+      }
+    } catch (e) {
+      console.error('Failed to save auth user to localStorage:', e);
     }
   }, [currentUser]);
 
@@ -244,7 +264,12 @@ export default function App() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('promptcraft_library_v1', JSON.stringify(prompts));
+    try {
+      localStorage.setItem('promptcraft_library_v1', JSON.stringify(prompts));
+    } catch (e) {
+      console.error('Failed to save prompts library to localStorage (quota exceeded):', e);
+      alert('Storage quota exceeded! Please use the JSON Export/Import feature to back up your prompt collection.');
+    }
   }, [prompts]);
 
   // Ensure selectedPromptId is valid
@@ -264,7 +289,7 @@ export default function App() {
     let taskFilter: string | null = null;
     let tagFilter: string | null = null;
     let favFilter: boolean | null = null;
-    let freeTextQuery = searchQuery.trim();
+    let freeTextQuery = debouncedSearchQuery.trim();
 
     const taskMatch = freeTextQuery.match(/\btask:([^\s]+)/i);
     if (taskMatch) {
@@ -319,7 +344,7 @@ export default function App() {
 
       return matchesFreeText && matchesTaskOp && matchesTagOp && matchesFavOp && matchesTask && matchesSubFolder && matchesTag && matchesFavorite && matchesRecent;
     });
-  }, [prompts, searchQuery, selectedTask, selectedSubFolder, selectedTag, showFavoritesOnly, showRecentOnly]);
+  }, [prompts, debouncedSearchQuery, selectedTask, selectedSubFolder, selectedTag, showFavoritesOnly, showRecentOnly]);
 
   const currentSelectedPrompt = useMemo(() => {
     return prompts.find(p => p.prompt_id === selectedPromptId) || filteredPrompts[0] || prompts[0];
