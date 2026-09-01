@@ -11,19 +11,22 @@
 
 </div>
 
-> A secure, powerful, and feature-rich web application to organize, store, search, version, and manage AI prompts in one centralized dashboard.
+> A clean workspace to organize, categorize, and manage AI prompts.
 
 ---
 
-## 📌 Overview
+## 📸 Screenshot Preview
 
-Prompt Organizer helps developers, prompt engineers, and AI enthusiasts manage their frequently used AI prompts without searching through old chat conversations. It features robust local persistence, strict JSON import/export validation, XSS sanitization via DOMPurify, AI-powered prompt enhancement, and tag management.
+<div align="center">
+  <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80" alt="Prompt Organizer Dashboard Preview" width="100%" style="border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);" />
+  <p><em>Centralized Prompt Management Dashboard with Tag Filtering, Search, and One-Click Copy.</em></p>
+</div>
 
 ---
 
 ## ✨ Features Overview
 
-- **🏷️ Tag & Category Management**: Categorize prompts by task (e.g., Coding, Writing, Marketing) and attach custom colored tags for fast filtering.
+- **🏷️ Tag & Category Management**: Categorize prompts by task (Coding, Writing, Marketing, etc.) and attach custom colored tags for fast filtering.
 - **🔍 Advanced Search & Filtering**: Instantly search prompts by keyword, tag, category, or favorite status.
 - **📋 One-Click Copy to Clipboard**: Seamlessly copy prompt templates with dynamic variable replacement (`{{variable}}`).
 - **📜 Version History**: Track prompt iterations and view historical versions.
@@ -33,14 +36,14 @@ Prompt Organizer helps developers, prompt engineers, and AI enthusiasts manage t
 
 ---
 
-## 🚀 Local Setup Instructions
+## 🚀 Local Setup & Running (`npm run dev`)
 
 Follow these steps to set up and run the project locally on your machine:
 
 ### Prerequisites
 
 - **Node.js** (v18 or higher recommended)
-- **npm** or **bun** package manager
+- **npm** package manager
 
 ### 1. Clone the Repository
 
@@ -79,9 +82,6 @@ npm test
 
 # Run TypeScript type check / linter
 npm run lint
-
-# Format code with Prettier
-npm run format
 ```
 
 ---
