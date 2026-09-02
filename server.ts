@@ -222,10 +222,17 @@ async function startServer() {
     app.use(express.static(servedDir));
   }
 
-  // Catch-all route to serve index.html for client-side routing
-  app.get('*', (req, res) => {
+  // AFTER — matches any GET path, so deep links fall back to the SPA shell
+  app.get('*', (req, res, next) => {
+    // Never hand HTML to an unknown API path
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ error: 'API endpoint not found' });
+    }
+
+    // Only SPA-fallback for navigation requests, not for missing assets
+    // (e.g. a deleted /assets/*.js should 404, not return index.html as 200)
+    if (req.accepts('html') !== 'html' && req.path.startsWith('/assets/')) {
+      return next();
     }
 
     for (const p of possibleDistPaths) {
@@ -234,7 +241,6 @@ async function startServer() {
         return res.sendFile(indexPath);
       }
     }
-
     res.status(404).send('Application build output (index.html) not found. Please run npm run build.');
   });
 
