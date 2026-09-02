@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PromptItem } from '../types';
 import { jsPDF } from 'jspdf';
-import { X, Copy, Check, Play, Sparkles, Code, FileText, Calendar, Clock, Tag, Download, RefreshCw, Terminal, ArrowRight } from 'lucide-react';
+import { X, Copy, Check, Play, Sparkles, Code, FileText, Calendar, Clock, Tag, Download, RefreshCw } from 'lucide-react';
 
 interface PromptDetailModalProps {
   prompt: PromptItem | null;
@@ -18,8 +18,6 @@ export const PromptDetailModal: React.FC<PromptDetailModalProps> = ({
   onOpenAIOptimize,
   onAction,
 }) => {
-  if (!isOpen || !prompt) return null;
-
   const [copied, setCopied] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [variables, setVariables] = useState<Record<string, string>>({});
@@ -42,6 +40,8 @@ export const PromptDetailModal: React.FC<PromptDetailModalProps> = ({
       setTestOutput(null);
     }
   }, [prompt]);
+
+  if (!isOpen || !prompt) return null;
 
   const handleCopyText = () => {
     navigator.clipboard.writeText(prompt.prompt_text);
@@ -145,8 +145,8 @@ export const PromptDetailModal: React.FC<PromptDetailModalProps> = ({
       } else {
         setTestOutput(`Error: ${data.error}`);
       }
-    } catch (err: any) {
-      setTestOutput(`Error: ${err.message || 'Failed to connect to AI server'}`);
+    } catch (err: unknown) {
+      setTestOutput(`Error: ${err instanceof Error ? err.message : 'Failed to connect to AI server'}`);
     } finally {
       setIsTesting(false);
     }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PromptItem, PromptVersion } from '../types';
-import { X, History, RotateCcw, Clock, FileCode, Check, Eye } from 'lucide-react';
+import { X, History, RotateCcw, Clock, FileCode, Check } from 'lucide-react';
 
 interface PromptVersionHistoryModalProps {
   prompt: PromptItem | null;
@@ -15,20 +15,20 @@ export const PromptVersionHistoryModal: React.FC<PromptVersionHistoryModalProps>
   onClose,
   onRevert,
 }) => {
-  if (!isOpen || !prompt) return null;
-
-  const versions = prompt.versions || [
+  const versions = prompt?.versions || [
     {
-      version_id: `v-${prompt.prompt_id}-1`,
+      version_id: `v-${prompt?.prompt_id}-1`,
       version_number: 1,
-      prompt_text: prompt.prompt_text,
-      timestamp: prompt.date_created || new Date().toISOString(),
+      prompt_text: prompt?.prompt_text || '',
+      timestamp: prompt?.date_created || new Date().toISOString(),
       change_summary: 'Initial version',
     },
   ];
 
   const [selectedVersionId, setSelectedVersionId] = useState<string>(versions[versions.length - 1]?.version_id || versions[0].version_id);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  if (!isOpen || !prompt) return null;
 
   const selectedVersion = versions.find((v) => v.version_id === selectedVersionId) || versions[0];
 

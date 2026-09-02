@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { PromptItem, TaskCategory, PromptTemplateItem } from '../types';
-import { X, Sparkles, Check, FileText, Tag as TagIcon, Bookmark, Plus } from 'lucide-react';
+import { PromptItem, PromptTemplateItem } from '../types';
+import { X, Check, FileText, Tag as TagIcon, Bookmark, Plus } from 'lucide-react';
 
 interface PromptModalProps {
   isOpen: boolean;

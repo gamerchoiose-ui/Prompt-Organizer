@@ -15,8 +15,7 @@ import { PromptSidebarList } from './components/PromptSidebarList';
 import { PromptDetailView } from './components/PromptDetailView';
 import { jsPDF } from 'jspdf';
 import { 
-  Sparkles, Plus, BookOpen, Star, Search, Clock, Code, 
-  FileText, Terminal, Copy, Check, Play, Trash2, Edit3, Tag, Download, RefreshCw, FolderKanban, BarChart3, History, Cloud, User, LogOut
+  Sparkles, Plus, BookOpen, Download, RefreshCw, BarChart3, Cloud, LogOut
 } from 'lucide-react';
 
 const TASK_CATEGORIES: string[] = [

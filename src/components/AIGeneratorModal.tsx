@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PromptItem } from '../types';
-import { X, Sparkles, Wand2, Check, RefreshCw } from 'lucide-react';
+import { X, Sparkles, Wand2, RefreshCw } from 'lucide-react';
 
 interface AIGeneratorModalProps {
   isOpen: boolean;
@@ -69,8 +69,8 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
       } else {
         setError(data.error || 'Failed to generate prompt');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect to AI server');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to connect to AI server');
     } finally {
       setIsGenerating(false);
     }

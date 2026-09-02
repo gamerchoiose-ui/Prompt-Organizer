@@ -32,7 +32,7 @@ app.post("/api/generate-prompt", async (req, res) => {
   try {
     const { action, currentPrompt, instructions, taskType } = req.body;
     
-    let systemInstruction = "You are an expert prompt engineer and system integration assistant. Your core task is to create and structure a new prompt entry while guaranteeing that all associated metadata—specifically its assigned category and tags—are fully indexed, linked, and searchable.";
+    const systemInstruction = "You are an expert prompt engineer and system integration assistant. Your core task is to create and structure a new prompt entry while guaranteeing that all associated metadata—specifically its assigned category and tags—are fully indexed, linked, and searchable.";
     let contents = "";
 
     if (action === "generate") {
@@ -83,9 +83,9 @@ app.post("/api/generate-prompt", async (req, res) => {
     const jsonText = response.text || "{}";
     const result = JSON.parse(jsonText);
     res.json({ success: true, prompt: result });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Gemini Generate Prompt Error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to generate prompt" });
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed to generate prompt" });
   }
 });
 
@@ -109,9 +109,9 @@ app.post("/api/test-prompt", async (req, res) => {
     });
 
     res.json({ success: true, output: response.text });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Gemini Test Prompt Error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to test prompt" });
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed to test prompt" });
   }
 });
 
@@ -126,13 +126,13 @@ app.post("/api/search", (req, res) => {
     const searchQuery = (query || "").trim().toLowerCase();
     
     // Score and filter prompts with boosted field relevance
-    const results = prompts.map((prompt: any) => {
+    const results = prompts.map((prompt: Record<string, unknown>) => {
       let score = 0;
-      const name = (prompt.name || "").toLowerCase();
-      const desc = (prompt.description || "").toLowerCase();
-      const text = (prompt.prompt_text || "").toLowerCase();
-      const tags = (prompt.tags || []).map((t: string) => t.toLowerCase());
-      const task = (prompt.associated_task || "").toLowerCase();
+      const name = (String(prompt.name || "")).toLowerCase();
+      const desc = (String(prompt.description || "")).toLowerCase();
+      const text = (String(prompt.prompt_text || "")).toLowerCase();
+      const tags = (Array.isArray(prompt.tags) ? prompt.tags : []).map((t: unknown) => String(t).toLowerCase());
+      const task = (String(prompt.associated_task || "")).toLowerCase();
 
       if (!searchQuery) {
         score = 1.0;
@@ -159,7 +159,7 @@ app.post("/api/search", (req, res) => {
         if (filters.is_favorite && !prompt.is_favorite) {
           matchesFilters = false;
         }
-        if (filters.tag && (!prompt.tags || !prompt.tags.includes(filters.tag))) {
+        if (filters.tag && (!Array.isArray(prompt.tags) || !prompt.tags.includes(filters.tag))) {
           matchesFilters = false;
         }
       }
@@ -170,13 +170,13 @@ app.post("/api/search", (req, res) => {
         _matches: score > 0 && matchesFilters
       };
     })
-    .filter(item => item._matches)
-    .sort((a, b) => b._score - a._score);
+    .filter((item: { _matches: boolean; _score: number }) => item._matches)
+    .sort((a: { _score: number }, b: { _score: number }) => b._score - a._score);
 
     res.json({ success: true, results, total: results.length });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Search API Error:", error);
-    res.status(500).json({ success: false, error: error.message || "Search failed" });
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Search failed" });
   }
 });
 

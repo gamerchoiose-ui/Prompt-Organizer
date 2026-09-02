@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, BookOpen, Code, Search, Database, Terminal, CheckCircle2, FileText, Sparkles } from 'lucide-react';
+import { X, BookOpen, Search, Database, Terminal, CheckCircle2, Sparkles } from 'lucide-react';
 
 interface AIGuideModalProps {
   isOpen: boolean;

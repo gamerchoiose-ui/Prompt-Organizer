@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Plus, Download, Upload, Search, BookOpen, Layers } from 'lucide-react';
+import { Sparkles, Plus, Download, Search, BookOpen } from 'lucide-react';
 
 interface NavbarProps {
   searchQuery: string;
@@ -7,7 +7,6 @@ interface NavbarProps {
   onOpenCreate: () => void;
   onOpenAIGenerator: () => void;
   onOpenImportExport: () => void;
-  totalPrompts: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,7 +15,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCreate,
   onOpenAIGenerator,
   onOpenImportExport,
-  totalPrompts,
 }) => {
   return (
     <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">

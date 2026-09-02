@@ -54,7 +54,7 @@ export async function setIDBItem<T>(key: string, value: T): Promise<void> {
     // Attempt mirror backup to localStorage (non-blocking if quota exceeded)
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch (err) {
+    } catch {
       // localStorage quota exceeded ignored since IndexedDB has high capacity
     }
   } catch (e) {

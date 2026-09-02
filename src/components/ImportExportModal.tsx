@@ -180,18 +180,18 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       const parsed = JSON.parse(jsonText);
       const items = Array.isArray(parsed) ? parsed : [parsed];
 
-      const validItems: PromptItem[] = items.map((item: any, idx: number) => ({
-        prompt_id: item.prompt_id || `imported-${Date.now()}-${idx}`,
-        name: item.name || 'Untitled Prompt',
-        description: item.description || 'No description provided',
-        prompt_text: item.prompt_text || '',
-        tags: Array.isArray(item.tags) ? item.tags : ['imported'],
-        associated_task: item.associated_task || 'Other',
-        subfolder: item.subfolder || undefined,
-        date_created: item.date_created || new Date().toISOString(),
-        last_used: item.last_used || new Date().toISOString(),
-        example_input: item.example_input,
-        example_output: item.example_output,
+      const validItems: PromptItem[] = items.map((item: Record<string, unknown>, idx: number) => ({
+        prompt_id: (item.prompt_id as string) || `imported-${Date.now()}-${idx}`,
+        name: (item.name as string) || 'Untitled Prompt',
+        description: (item.description as string) || 'No description provided',
+        prompt_text: (item.prompt_text as string) || '',
+        tags: Array.isArray(item.tags) ? (item.tags as string[]) : ['imported'],
+        associated_task: (item.associated_task as string) || 'Other',
+        subfolder: (item.subfolder as string) || undefined,
+        date_created: (item.date_created as string) || new Date().toISOString(),
+        last_used: (item.last_used as string) || new Date().toISOString(),
+        example_input: item.example_input as string | undefined,
+        example_output: item.example_output as string | undefined,
         is_favorite: Boolean(item.is_favorite),
       }));
 
@@ -201,8 +201,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       setTimeout(() => {
         onClose();
       }, 1500);
-    } catch (err: any) {
-      setError(`Invalid JSON format: ${err.message}`);
+    } catch (err: unknown) {
+      setError(`Invalid JSON format: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -216,7 +216,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         const content = event.target?.result as string;
         setJsonText(content);
         setError(null);
-      } catch (err: any) {
+      } catch {
         setError('Failed to read file');
       }
     };

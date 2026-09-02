@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Edit2, Trash2, Check, X, AlertCircle } from 'lucide-react';
+import { Tag, Edit2, Trash2, Check, X } from 'lucide-react';
 import { PromptItem } from '../types';
 
 interface TagManagementModalProps {

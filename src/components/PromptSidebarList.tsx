@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PromptItem } from '../types';
 import { FolderKanban, Trash2, Star } from 'lucide-react';
 import * as ReactWindow from 'react-window';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const List = (ReactWindow as any).List || (ReactWindow as any).default;
 
 interface PromptSidebarListProps {
@@ -43,7 +44,7 @@ interface RowProps {
 const highlightText = (text: string, query?: string) => {
   if (!query || !query.trim()) return text;
   try {
-    const parts = text.split(new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+    const parts = text.split(new RegExp(`(${query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
     return parts.map((part, i) => 
       part.toLowerCase() === (query || '').toLowerCase() ? (
         <mark key={i} className="bg-amber-200 text-stone-900 rounded px-0.5 font-semibold not-italic">
@@ -53,7 +54,7 @@ const highlightText = (text: string, query?: string) => {
         part
       )
     );
-  } catch (e) {
+  } catch {
     return text;
   }
 };
@@ -75,10 +76,6 @@ const RowComponent = ({
   index: number;
   style: React.CSSProperties;
 } & RowProps) => {
-  const p = filteredPrompts[index];
-  if (!p) return null;
-  const isSelected = selectedPromptId === p.prompt_id;
-  const isChecked = selectedPromptIds.includes(p.prompt_id);
   const [showContextMenu, setShowContextMenu] = useState(false);
 
   useEffect(() => {
@@ -87,6 +84,11 @@ const RowComponent = ({
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
   }, [showContextMenu]);
+
+  const p = filteredPrompts[index];
+  if (!p) return null;
+  const isSelected = selectedPromptId === p.prompt_id;
+  const isChecked = selectedPromptIds.includes(p.prompt_id);
 
   return (
     <div style={style} className="px-3 py-1.5 relative">
@@ -356,6 +358,7 @@ export const PromptSidebarList: React.FC<PromptSidebarListProps> = React.memo(({
 
       <div ref={containerRef} className="flex-1 overflow-hidden w-full">
         {filteredPrompts.length > 0 ? (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           React.createElement(List as any, {
             height: listHeight || 400,
             rowCount: filteredPrompts.length,
