@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PromptItem, PromptVersion, PromptTemplateItem } from './types';
 import { INITIAL_PROMPTS } from './data/initialPrompts';
+import { getIDBItem, setIDBItem } from './lib/idbStorage';
+import { usePromptFilter } from './hooks/usePromptFilter';
 import { PromptModal } from './components/PromptModal';
 import { PromptDetailModal } from './components/PromptDetailModal';
 import { AIGeneratorModal } from './components/AIGeneratorModal';
@@ -31,28 +33,10 @@ const TASK_CATEGORIES: string[] = [
 ];
 
 export default function App() {
-  const [prompts, setPrompts] = useState<PromptItem[]>(() => {
-    const saved = localStorage.getItem('promptcraft_library_v1');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved prompts', e);
-      }
-    }
-    return INITIAL_PROMPTS;
-  });
+  const [prompts, setPrompts] = useState<PromptItem[]>(INITIAL_PROMPTS);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,73 +55,69 @@ export default function App() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showRecentOnly, setShowRecentOnly] = useState(false);
   
-  const [subFolders, setSubFolders] = useState<Record<string, string[]>>(() => {
-    const saved = localStorage.getItem('promptcraft_subfolders_v1');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved subfolders', e);
-      }
-    }
-    return {
-      Coding: ['Frontend', 'Backend', 'API'],
-      Writing: ['Blog Posts', 'Emails'],
-      Analysis: ['Financial', 'Data Science']
-    };
+  const [subFolders, setSubFolders] = useState<Record<string, string[]>>({
+    Coding: ['Frontend', 'Backend', 'API'],
+    Writing: ['Blog Posts', 'Emails'],
+    Analysis: ['Financial', 'Data Science']
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('promptcraft_subfolders_v1', JSON.stringify(subFolders));
-    } catch (e) {
-      console.error('Failed to save subfolders to localStorage (quota exceeded or restricted):', e);
+  const [templates, setTemplates] = useState<PromptTemplateItem[]>([
+    {
+      id: 't-1',
+      name: 'Expert Role & Task Structure',
+      description: 'Establishes a professional persona and clear task instructions with placeholders',
+      template_text: 'You are an expert {{role}}. Your task is to help me with {{topic}}. Please provide rigorous detail, best practices, and clear explanations.'
+    },
+    {
+      id: 't-2',
+      name: 'Step-by-Step Analytical Breakdown',
+      description: 'Instructs the model to dissect a complex subject methodically',
+      template_text: 'Act as a {{role}}. Analyze the following {{subject}} by breaking it down into structured, step-by-step actionable insights:\n\n{{input}}'
+    },
+    {
+      id: 't-3',
+      name: 'Senior Code Review & Security Audit',
+      description: 'Comprehensive software engineering code analysis',
+      template_text: 'Review the following code snippet for bugs, security vulnerabilities, and performance bottlenecks as a senior {{language}} engineer:\n\n{{code}}'
+    },
+    {
+      id: 't-4',
+      name: 'Executive Summary & Key Takeaways',
+      description: 'Condenses dense text into clear, bulleted takeaways',
+      template_text: 'Summarize the following text into 3 key bullet points, critical insights, and a concise conclusion:\n\n{{text}}'
     }
+  ]);
+
+  // Load from IndexedDB asynchronously on mount
+  useEffect(() => {
+    getIDBItem<PromptItem[]>('promptcraft_library_v1').then((saved) => {
+      if (saved && Array.isArray(saved) && saved.length > 0) {
+        setPrompts(saved);
+      }
+    });
+    getIDBItem<Record<string, string[]>>('promptcraft_subfolders_v1').then((saved) => {
+      if (saved && typeof saved === 'object') {
+        setSubFolders(saved);
+      }
+    });
+    getIDBItem<PromptTemplateItem[]>('promptcraft_templates_v1').then((saved) => {
+      if (saved && Array.isArray(saved) && saved.length > 0) {
+        setTemplates(saved);
+      }
+    });
+  }, []);
+
+  // Save to IndexedDB asynchronously on state change
+  useEffect(() => {
+    setIDBItem('promptcraft_subfolders_v1', subFolders).catch((e) => {
+      console.error('Failed to save subfolders to IDB:', e);
+    });
   }, [subFolders]);
 
-  const [templates, setTemplates] = useState<PromptTemplateItem[]>(() => {
-    const saved = localStorage.getItem('promptcraft_templates_v1');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved templates', e);
-      }
-    }
-    return [
-      {
-        id: 't-1',
-        name: 'Expert Role & Task Structure',
-        description: 'Establishes a professional persona and clear task instructions with placeholders',
-        template_text: 'You are an expert {{role}}. Your task is to help me with {{topic}}. Please provide rigorous detail, best practices, and clear explanations.'
-      },
-      {
-        id: 't-2',
-        name: 'Step-by-Step Analytical Breakdown',
-        description: 'Instructs the model to dissect a complex subject methodically',
-        template_text: 'Act as a {{role}}. Analyze the following {{subject}} by breaking it down into structured, step-by-step actionable insights:\n\n{{input}}'
-      },
-      {
-        id: 't-3',
-        name: 'Senior Code Review & Security Audit',
-        description: 'Comprehensive software engineering code analysis',
-        template_text: 'Review the following code snippet for bugs, security vulnerabilities, and performance bottlenecks as a senior {{language}} engineer:\n\n{{code}}'
-      },
-      {
-        id: 't-4',
-        name: 'Executive Summary & Key Takeaways',
-        description: 'Condenses dense text into clear, bulleted takeaways',
-        template_text: 'Summarize the following text into 3 key bullet points, critical insights, and a concise conclusion:\n\n{{text}}'
-      }
-    ];
-  });
-
   useEffect(() => {
-    try {
-      localStorage.setItem('promptcraft_templates_v1', JSON.stringify(templates));
-    } catch (e) {
-      console.error('Failed to save templates to localStorage:', e);
-    }
+    setIDBItem('promptcraft_templates_v1', templates).catch((e) => {
+      console.error('Failed to save templates to IDB:', e);
+    });
   }, [templates]);
 
   const handleSaveTemplate = (newTpl: Omit<PromptTemplateItem, 'id'>) => {
@@ -230,7 +210,7 @@ export default function App() {
 
   const handleManualSync = async () => {
     if (!currentUser) {
-      alert('Please sign in to sync your prompt library to the cloud.');
+      alert('Please sign in to save your prompt library to your local profile.');
       return;
     }
     setIsSyncing(true);
@@ -241,7 +221,7 @@ export default function App() {
       localStorage.setItem('promptcraft_library_v1', JSON.stringify(prompts));
       localStorage.setItem('promptcraft_last_synced', now);
       setLastSynced(now);
-      setSyncMessage('Successfully synced to cloud storage');
+      setSyncMessage('Successfully synced to local offline profile');
       setTimeout(() => setSyncMessage(null), 3000);
     } catch (err) {
       console.error('Sync failed', err);
@@ -264,12 +244,9 @@ export default function App() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('promptcraft_library_v1', JSON.stringify(prompts));
-    } catch (e) {
-      console.error('Failed to save prompts library to localStorage (quota exceeded):', e);
-      alert('Storage quota exceeded! Please use the JSON Export/Import feature to back up your prompt collection.');
-    }
+    setIDBItem('promptcraft_library_v1', prompts).catch((e) => {
+      console.error('Failed to save prompts library to IndexedDB (quota exceeded or restricted):', e);
+    });
   }, [prompts]);
 
   // Ensure selectedPromptId is valid
@@ -285,80 +262,32 @@ export default function App() {
     ).sort();
   }, [prompts]);
 
-  const filteredPrompts = useMemo(() => {
-    let taskFilter: string | null = null;
-    let tagFilter: string | null = null;
-    let favFilter: boolean | null = null;
-    let freeTextQuery = debouncedSearchQuery.trim();
-
-    const taskMatch = freeTextQuery.match(/\btask:([^\s]+)/i);
-    if (taskMatch) {
-      taskFilter = taskMatch[1].replace(/['"]/g, '');
-      freeTextQuery = freeTextQuery.replace(taskMatch[0], '').trim();
-    }
-
-    const tagMatch = freeTextQuery.match(/\btag:([^\s]+)/i);
-    if (tagMatch) {
-      tagFilter = tagMatch[1].replace(/['"]/g, '');
-      freeTextQuery = freeTextQuery.replace(tagMatch[0], '').trim();
-    }
-
-    const favMatch = freeTextQuery.match(/\b(fav|is:favorite):(true|yes|1)/i);
-    if (favMatch) {
-      favFilter = true;
-      freeTextQuery = freeTextQuery.replace(favMatch[0], '').trim();
-    }
-
-    return prompts.filter((p) => {
-      const matchesFreeText =
-        freeTextQuery === '' ||
-        p.name.toLowerCase().includes(freeTextQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(freeTextQuery.toLowerCase()) ||
-        p.prompt_text.toLowerCase().includes(freeTextQuery.toLowerCase()) ||
-        (p.tags && p.tags.some((t) => t.toLowerCase().includes(freeTextQuery.toLowerCase())));
-
-      const matchesTaskOp =
-        !taskFilter || p.associated_task.toLowerCase().includes(taskFilter.toLowerCase());
-
-      const matchesTagOp =
-        !tagFilter || (p.tags && p.tags.some(t => t.toLowerCase().includes(tagFilter.toLowerCase())));
-
-      const matchesFavOp =
-        favFilter === null || p.is_favorite === favFilter;
-
-      const matchesTask =
-        selectedTask === 'All Tasks' ||
-        p.associated_task.toLowerCase() === selectedTask.toLowerCase();
-
-      const matchesSubFolder =
-        !selectedSubFolder ||
-        (p.associated_task.toLowerCase() === selectedTask.toLowerCase() &&
-         p.subfolder?.toLowerCase() === selectedSubFolder.toLowerCase());
-
-      const matchesTag =
-        selectedTag === null || (p.tags && p.tags.includes(selectedTag));
-
-      const matchesFavorite = !showFavoritesOnly || p.is_favorite;
-
-      const matchesRecent = !showRecentOnly || true; // Can sort or filter by recent if needed
-
-      return matchesFreeText && matchesTaskOp && matchesTagOp && matchesFavOp && matchesTask && matchesSubFolder && matchesTag && matchesFavorite && matchesRecent;
-    });
-  }, [prompts, debouncedSearchQuery, selectedTask, selectedSubFolder, selectedTag, showFavoritesOnly, showRecentOnly]);
+  const filteredPrompts = usePromptFilter(
+    prompts,
+    searchQuery,
+    selectedTask,
+    selectedSubFolder,
+    selectedTag,
+    showFavoritesOnly,
+    showRecentOnly
+  );
 
   const currentSelectedPrompt = useMemo(() => {
     return prompts.find(p => p.prompt_id === selectedPromptId) || filteredPrompts[0] || prompts[0];
   }, [prompts, selectedPromptId, filteredPrompts]);
 
-  // When a prompt is retrieved or selected, automatically update its last_used timestamp
-  const handleSelectPrompt = (promptId: string) => {
-    setSelectedPromptId(promptId);
+  const updatePromptLastUsed = (promptId: string) => {
     const now = new Date().toISOString();
     setPrompts((prev) =>
       prev.map((p) =>
         p.prompt_id === promptId ? { ...p, last_used: now } : p
       )
     );
+  };
+
+  // Only select the prompt without triggering global state mutation on click inspection
+  const handleSelectPrompt = (promptId: string) => {
+    setSelectedPromptId(promptId);
   };
 
   const handleReorderPrompts = (draggedId: string, targetId: string) => {
@@ -534,10 +463,14 @@ export default function App() {
     );
   };
 
-  const handleCopyPromptText = (text: string) => {
+  const handleCopyPromptText = (text: string, promptId?: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    const targetId = promptId || selectedPromptId;
+    if (targetId) {
+      updatePromptLastUsed(targetId);
+    }
   };
 
   const handleExportPDF = (prompt: PromptItem) => {
@@ -819,7 +752,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Cloud Sync & Auth Status */}
+            {/* Local Profile & Offline Storage Sync Status */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
               <Cloud className={`w-3.5 h-3.5 ${currentUser ? 'text-indigo-600' : 'text-slate-400'}`} />
               <div className="hidden sm:flex flex-col">
@@ -827,7 +760,7 @@ export default function App() {
                   {currentUser ? (
                     <>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                      <span>Synced ({currentUser.email})</span>
+                      <span>Local Profile ({currentUser.email})</span>
                     </>
                   ) : (
                     <span>Not Signed In</span>
@@ -844,7 +777,7 @@ export default function App() {
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs'
                 }`}
-                title={currentUser ? "Sync library to cloud storage" : "Sign in to enable cloud sync"}
+                title={currentUser ? "Save & sync library to local offline profile" : "Sign in to enable local profile"}
               >
                 <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
@@ -962,6 +895,12 @@ export default function App() {
           setIsDetailModalOpen(false);
           setOptimizingPrompt(p);
           setIsAIGeneratorOpen(true);
+        }}
+        onAction={() => {
+          const activePrompt = modalPrompt || currentSelectedPrompt;
+          if (activePrompt) {
+            updatePromptLastUsed(activePrompt.prompt_id);
+          }
         }}
       />
 

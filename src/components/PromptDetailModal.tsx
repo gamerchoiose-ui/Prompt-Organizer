@@ -8,6 +8,7 @@ interface PromptDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenAIOptimize: (prompt: PromptItem) => void;
+  onAction?: () => void;
 }
 
 export const PromptDetailModal: React.FC<PromptDetailModalProps> = ({
@@ -15,6 +16,7 @@ export const PromptDetailModal: React.FC<PromptDetailModalProps> = ({
   isOpen,
   onClose,
   onOpenAIOptimize,
+  onAction,
 }) => {
   if (!isOpen || !prompt) return null;
 
@@ -45,10 +47,12 @@ export const PromptDetailModal: React.FC<PromptDetailModalProps> = ({
     navigator.clipboard.writeText(prompt.prompt_text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    onAction?.();
   };
 
   const handleCopyAndClose = () => {
     navigator.clipboard.writeText(prompt.prompt_text);
+    onAction?.();
     onClose();
   };
 
@@ -137,6 +141,7 @@ export const PromptDetailModal: React.FC<PromptDetailModalProps> = ({
       const data = await res.json();
       if (data.success) {
         setTestOutput(data.output);
+        onAction?.();
       } else {
         setTestOutput(`Error: ${data.error}`);
       }
