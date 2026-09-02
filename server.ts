@@ -4,12 +4,15 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -24,7 +27,7 @@ const ai = new GoogleGenAI({
 
 // API Routes
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", model: GEMINI_MODEL });
 });
 
 // Endpoint to generate or optimize a prompt using Gemini
@@ -59,7 +62,7 @@ app.post("/api/generate-prompt", async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+      model: GEMINI_MODEL,
       contents,
       config: {
         systemInstruction,
@@ -104,7 +107,7 @@ app.post("/api/test-prompt", async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+      model: GEMINI_MODEL,
       contents: finalPrompt,
     });
 
@@ -181,6 +184,10 @@ app.post("/api/search", (req, res) => {
 });
 
 async function startServer() {
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn("GEMINI_API_KEY is not set — /api/generate-prompt and /api/test-prompt will fail.");
+  }
+  console.log(`Using Gemini model: ${GEMINI_MODEL}`);
   const isProduction = process.env.NODE_ENV === "production";
 
   if (!isProduction) {
