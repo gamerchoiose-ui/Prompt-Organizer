@@ -36,7 +36,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@types/react-window": "^2.0.0",
-    "@vitejs/plugin-react": "^5.0.4",
+    "@vitejs/plugin-react": "^6.1.1",
     "cross-env": "^10.1.0",
     "esbuild": "^0.25.0",
     "eslint": "^9.30.0",
